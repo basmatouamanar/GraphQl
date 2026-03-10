@@ -1,0 +1,56 @@
+/* Reset de base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Corps de la page */
+body {
+    background-color: #fff8e1; /* jaune clair */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 40px 20px 100px 20px; /* espace en bas pour ajouter des choses */
+}
+
+/* Avatar */
+#avatar {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #ffd54f; /* jaune doré */
+    margin-bottom: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Nom complet */
+#fullname {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #ffb300; /* orange/jaune foncé */
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+/* Infos du profil */
+p {
+    font-size: 1rem;
+    color: #6d4c41; /* marron doux pour le texte */
+    margin: 5px 0;
+}
+
+p span {
+    font-weight: 600;
+    color: #ff8f00; /* accent jaune orangé */
+}
+
+/* Ajout d’un petit style pour séparer les sections si tu veux */
+section {
+    margin-top: 20px;
+    width: 100%;
+    max-width: 400px;
+}
