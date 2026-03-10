@@ -8,18 +8,39 @@ fetch("https://learn.zone01oujda.ma/api/graphql-engine/v1/graphql", {
   },
   body: JSON.stringify({
     query: `
-        {
- user {
+{
+  user {
     login
     firstName
     lastName
     avatarUrl
+    auditRatio
+    totalUp
+    totalDown
+
+    success: audits_aggregate(
+      where: { closureType: { _eq: succeeded } }
+    ) {
+      aggregate {
+        count
+      }
+    }
+
+    failed: audits_aggregate(
+      where: { closureType: { _eq: failed } }
+    ) {
+      aggregate {
+        count
+      }
+    }
+
     events(where: {cohorts: {labelName: {_is_null: false}}}) {
       cohorts {
         labelName
       }
     }
   }
+
   xp: transaction_aggregate(
     where: {
       type: {_eq: "xp"}
@@ -32,6 +53,7 @@ fetch("https://learn.zone01oujda.ma/api/graphql-engine/v1/graphql", {
       }
     }
   }
+
   level: transaction_aggregate(
     where: {
       type: {_eq: "level"}
@@ -44,6 +66,7 @@ fetch("https://learn.zone01oujda.ma/api/graphql-engine/v1/graphql", {
       }
     }
   }
+
   transaction(
     where: {
       type: {_eq: "xp"}
@@ -107,14 +130,32 @@ fetch("https://learn.zone01oujda.ma/api/graphql-engine/v1/graphql", {
       })
     });
     drawBarChart(slice)
+/*
+Audit Ratio
+Total Up
+Total Down
+Number of successful audits
+Number of failed audits
+*/
+    const AuditRatio = data.data.user[0].auditRatio
+    const TotalUp = data.data.user[0].totalUp
+    const TotalDown = data.data.user[0].totalDown
+    const successfulAudits = data.data.user[0].success.aggregate.count
+    const failedAudits = data.data.user[0].failed.aggregate.count
+
+    document.getElementById('Audit-Ratio').textContent = Math.round(AuditRatio * 10)/10 
+    document.getElementById('Total-Up').textContent =  Math.round((TotalUp / 1000000) * 100) / 100 + ' MB'
+    document.getElementById('Total-Down').textContent = Math.round((TotalDown / 1000000) * 100) / 100 + ' MB'
+    document.getElementById('successful-audits').textContent = successfulAudits
+    document.getElementById('failed-audits').textContent = failedAudits
   })
 
 
 function drawBarChart(slice) {
   const svg = document.getElementById("xp-graph")
-  const W = 800
-  const H = 400
-  const margin = { top: 30, right: 30, bottom: 120, left: 60 }
+  const W = 900
+  const H = 420
+  const margin = { top: 40, right: 40, bottom: 130, left: 70 }
   const innerW = W - margin.left - margin.right
   const innerH = H - margin.top - margin.bottom
 
@@ -124,76 +165,116 @@ function drawBarChart(slice) {
   svg.removeAttribute("height")
   svg.innerHTML = ""
 
-  const ns = "http://www.w3.org/2000/svg"
+  const ns       = "http://www.w3.org/2000/svg"
   const maxValue = Math.max(...slice.map(e => e.amount))
-  const barWidth = innerW / slice.length
+  const stepX    = innerW / (slice.length - 1)
 
-  // ── Y axis grid lines ──
+  // ── Defs: gradient fill under the line ──
+  const defs = document.createElementNS(ns, "defs")
+  defs.innerHTML = `
+    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#00f5c4" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#00f5c4" stop-opacity="0"/>
+    </linearGradient>
+  `
+  svg.appendChild(defs)
+
+  // ── Y axis grid lines + labels ──
   const ySteps = 5
   for (let i = 0; i <= ySteps; i++) {
     const yVal = (maxValue / ySteps) * i
-    const y = margin.top + innerH - (yVal / maxValue) * innerH
+    const y    = margin.top + innerH - (yVal / maxValue) * innerH
 
     const line = document.createElementNS(ns, "line")
-    line.setAttribute("x1", margin.left)
-    line.setAttribute("x2", margin.left + innerW)
-    line.setAttribute("y1", y)
-    line.setAttribute("y2", y)
-    line.setAttribute("stroke", "#1e2130")
-    line.setAttribute("stroke-width", "1")
+    line.setAttribute("x1",               margin.left)
+    line.setAttribute("x2",               margin.left + innerW)
+    line.setAttribute("y1",               y)
+    line.setAttribute("y2",               y)
+    line.setAttribute("stroke",           "#1e2130")
+    line.setAttribute("stroke-width",     "1")
+    line.setAttribute("stroke-dasharray", "5,5")
     svg.appendChild(line)
 
     const label = document.createElementNS(ns, "text")
-    label.setAttribute("x", margin.left - 8)
-    label.setAttribute("y", y + 4)
+    label.setAttribute("x",           margin.left - 10)
+    label.setAttribute("y",           y + 4)
     label.setAttribute("text-anchor", "end")
-    label.setAttribute("font-size", "10")
-    label.setAttribute("fill", "#555d7a")
-    label.textContent = (yVal / 1000).toFixed(0) + "k"
+    label.setAttribute("font-size",   "11")
+    label.setAttribute("fill",        "#555d7a")
+    label.textContent = formatXP(yVal)
     svg.appendChild(label)
   }
 
-  // ── Bars + labels ──
-  slice.forEach((item, index) => {
-    const barH = (item.amount / maxValue) * innerH
-    const x = margin.left + index * barWidth
-    const y = margin.top + innerH - barH
+  // ── Compute points ──
+  const points = slice.map((item, index) => ({
+    x:    margin.left + index * stepX,
+    y:    margin.top + innerH - (item.amount / maxValue) * innerH,
+    item
+  }))
 
-    // bar
-    const rect = document.createElementNS(ns, "rect")
-    rect.setAttribute("x", x + 2)
-    rect.setAttribute("y", y)
-    rect.setAttribute("width", Math.max(barWidth - 4, 1))
-    rect.setAttribute("height", barH)
-    rect.setAttribute("fill", "#00f5c4")
-    rect.setAttribute("rx", "2")
-    rect.setAttribute("opacity", "0.85")
-    svg.appendChild(rect)
+  // ── Area fill (polygon under line) ──
+  const areaPoints =
+    points.map(p => `${p.x},${p.y}`).join(" ") +
+    ` ${points[points.length - 1].x},${margin.top + innerH}` +
+    ` ${points[0].x},${margin.top + innerH}`
 
-    // xp on top of bar
-    if (barH > 16) {
-      const xpLabel = document.createElementNS(ns, "text")
-      xpLabel.setAttribute("x", x + barWidth / 2)
-      xpLabel.setAttribute("y", y - 4)
-      xpLabel.setAttribute("text-anchor", "middle")
-      xpLabel.setAttribute("font-size", "8")
-      xpLabel.setAttribute("fill", "#00f5c4")
-      xpLabel.textContent = (item.amount / 1000).toFixed(1) + "k"
-      svg.appendChild(xpLabel)
-    }
+  const area = document.createElementNS(ns, "polygon")
+  area.setAttribute("points", areaPoints)
+  area.setAttribute("fill",   "url(#areaGrad)")
+  svg.appendChild(area)
 
-    // project name rotated -45deg
-    const labelX = x + barWidth / 2
-    const labelY = margin.top + innerH + 12
-    const text = document.createElementNS(ns, "text")
-    text.setAttribute("x", labelX)
-    text.setAttribute("y", labelY)
+  // ── Line ──
+  const lineEl = document.createElementNS(ns, "polyline")
+  lineEl.setAttribute("points",          points.map(p => `${p.x},${p.y}`).join(" "))
+  lineEl.setAttribute("fill",            "none")
+  lineEl.setAttribute("stroke",          "#00f5c4")
+  lineEl.setAttribute("stroke-width",    "2.5")
+  lineEl.setAttribute("stroke-linejoin", "round")
+  lineEl.setAttribute("stroke-linecap",  "round")
+  svg.appendChild(lineEl)
+
+  // ── Dots + XP value above + project name below ──
+  points.forEach(({ x, y, item }) => {
+
+    // outer glow circle
+    const glow = document.createElementNS(ns, "circle")
+    glow.setAttribute("cx",      x)
+    glow.setAttribute("cy",      y)
+    glow.setAttribute("r",       "7")
+    glow.setAttribute("fill",    "rgba(0,245,196,0.15)")
+    svg.appendChild(glow)
+
+    // inner dot
+    const dot = document.createElementNS(ns, "circle")
+    dot.setAttribute("cx",          x)
+    dot.setAttribute("cy",          y)
+    dot.setAttribute("r",           "4")
+    dot.setAttribute("fill",        "#00f5c4")
+    dot.setAttribute("stroke",      "#080910")
+    dot.setAttribute("stroke-width","2")
+    svg.appendChild(dot)
+
+    // XP value above dot
+    const xpLabel = document.createElementNS(ns, "text")
+    xpLabel.setAttribute("x",           x)
+    xpLabel.setAttribute("y",           y - 12)
+    xpLabel.setAttribute("text-anchor", "middle")
+    xpLabel.setAttribute("font-size",   "9")
+    xpLabel.setAttribute("fill",        "#00f5c4")
+    xpLabel.textContent = formatXP(item.amount)
+    svg.appendChild(xpLabel)
+
+    // project name rotated -45deg below x axis
+    const labelY = margin.top + innerH + 14
+    const text   = document.createElementNS(ns, "text")
+    text.setAttribute("x",           x)
+    text.setAttribute("y",           labelY)
     text.setAttribute("text-anchor", "end")
-    text.setAttribute("font-size", "9")
-    text.setAttribute("fill", "#555d7a")
-    text.setAttribute("transform", `rotate(-45, ${labelX}, ${labelY})`)
-    text.textContent = item.project.length > 20
-      ? item.project.slice(0, 19) + "…"
+    text.setAttribute("font-size",   "10")
+    text.setAttribute("fill",        "#555d7a")
+    text.setAttribute("transform",   `rotate(-45, ${x}, ${labelY})`)
+    text.textContent = item.project.length > 18
+      ? item.project.slice(0, 17) + "…"
       : item.project
     svg.appendChild(text)
   })
@@ -201,13 +282,19 @@ function drawBarChart(slice) {
   // ── Axes ──
   const yAxis = document.createElementNS(ns, "line")
   yAxis.setAttribute("x1", margin.left); yAxis.setAttribute("x2", margin.left)
-  yAxis.setAttribute("y1", margin.top); yAxis.setAttribute("y2", margin.top + innerH)
+  yAxis.setAttribute("y1", margin.top);  yAxis.setAttribute("y2", margin.top + innerH)
   yAxis.setAttribute("stroke", "#2a2f45"); yAxis.setAttribute("stroke-width", "1")
   svg.appendChild(yAxis)
 
   const xAxis = document.createElementNS(ns, "line")
-  xAxis.setAttribute("x1", margin.left); xAxis.setAttribute("x2", margin.left + innerW)
+  xAxis.setAttribute("x1", margin.left);         xAxis.setAttribute("x2", margin.left + innerW)
   xAxis.setAttribute("y1", margin.top + innerH); xAxis.setAttribute("y2", margin.top + innerH)
-  xAxis.setAttribute("stroke", "#2a2f45"); xAxis.setAttribute("stroke-width", "1")
+  xAxis.setAttribute("stroke", "#2a2f45");        xAxis.setAttribute("stroke-width", "1")
   svg.appendChild(xAxis)
+}
+
+function formatXP(amount) {
+  if (amount >= 1_000_000) return (amount / 1_000_000).toFixed(2) + " MB"
+  if (amount >= 1_000)     return (amount / 1_000).toFixed(1) + " kB"
+  return amount + " B"
 }
