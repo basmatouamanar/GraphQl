@@ -9,15 +9,49 @@
 </head>
 
 <body>
-    <h1>Login</h1>
+    <div id="login-page">
+        <h1>Login</h1>
         <form id="login-form">
-            <input type="text" id="username" placeholder="Username or Email" required>
+            <input type="text" id="username-login" placeholder="Username or Email" required>
             <input type="password" id="password" placeholder="Password" required>
             <button type="submit">Login</button>
-        </form>    
+        </form>
 
-    <p id="error-message"></p>
+        <p id="error-message"></p>
+    </div>
 
-    <script src="js/login.js"></script>
+    <div id="profile-page" style="display: none;">
+        <section id="header-view">
+            <img id="avatar" alt="Profile picture">
+            <h1 id="fullname"></h1>
+            <p>Username: <span id="username"></span></p>
+            <p>Cohort: <span id="cohort"></span></p>
+            <p>Total XP: <span id="total-xp"></span></p>
+            <p>Level: <span id="level"></span></p>
+            <p>Rank: <span id="current-rank"></span></p>
+        </section>
+
+        <section id="XP-Progress">
+            <h2>XP Progress</h2>
+
+            <svg id="xp-graph" width="600" height="300">
+                <!-- bars will be inserted here by JS -->
+            </svg>
+
+        </section>
+
+        <section id="audit-performence">
+            <h3>Audit Performance</h3>
+            <p>Audit Ratio: <span id="Audit-Ratio"></span></p>
+            <p>Total Up: <span id="Total-Up"></span></p>
+            <p>Total Down: <span id="Total-Down"></span></p>
+            <p>Number of successful audits: <span id="successful-audits"></span></p>
+            <p>Number of failed audits: <span id="failed-audits"></span></p>
+        </section>
+
+    </div>
+
+    <script src="js/profile.js"></script>
 </body>
+
 </html>
