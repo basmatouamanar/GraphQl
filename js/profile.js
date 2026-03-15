@@ -23,16 +23,16 @@ loginform.addEventListener('submit', (e) => {
     const pass = password.value;
 
     const token = btoa(user + ':' + pass);
-
+    
     fetch('https://learn.zone01oujda.ma/api/auth/signin', {
-        method: "POST",
-        headers: {
-            "Authorization": "Basic " + token,
-            "Content-Type": "application/json"
+      method: "POST",
+      headers: {
+        "Authorization": "Basic " + token,
+        "Content-Type": "application/json"
         },
         body: null
     })
-        .then(response => {
+    .then(response => {
             if (!response.ok) {
                 throw new Error('Invalid credentials');
             }
@@ -47,15 +47,15 @@ loginform.addEventListener('submit', (e) => {
 
                 // redirection vers profile
                 Showpage('profile')
-              //  document.getElementById("error-message").textContent = 'Connexion réussie !'
+                //  document.getElementById("error-message").textContent = 'Connexion réussie !'
                // alert("Connexion réussie !")
-                // window.location.href = "profile.html"; // redirect après login
+               // window.location.href = "profile.html"; // redirect après login
             } else {
-                alert("Erreur lors de login");
+              alert("Erreur lors de login");
             }
         })
         .catch(err => {
-            alert("user name or password incorrect")
+          alert("user name or password incorrect")
             console.error(err);
         })
 })
@@ -64,8 +64,13 @@ loginform.addEventListener('submit', (e) => {
 ////////////////////////////////////////////////////////////////////////
 
 
+function Logout() {
+  localStorage.removeItem('jwt')
+  Showpage('login')
+}
+
 function ShowProfile() {
-  
+ // const logoutButton = document.getElementById('logout-buttom')
   const token = localStorage.getItem("jwt")
   fetch("https://learn.zone01oujda.ma/api/graphql-engine/v1/graphql", {
     method: "POST",
