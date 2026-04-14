@@ -1,0 +1,72 @@
+host link : https://basmatouamanar.github.io/GraphQl/
+
+# GraphQL Profile Page
+
+## 📌 Overview
+This project is a personal profile page built using **GraphQL**.  
+It allows users to log in and visualize their school data such as XP, grades, audits, and skills through an interactive UI.
+
+The data is fetched from the Zone01 Oujda GraphQL API:
+https://learn.zone01oujda.ma/api/graphql-engine/v1/graphql
+
+---
+
+## 🎯 Objectives
+- Learn and use the **GraphQL query language**
+- Implement **authentication using JWT**
+- Build a **dynamic profile UI**
+- Create **SVG-based statistic graphs**
+- Understand **UI/UX principles**
+
+---
+
+## 🚀 Features
+
+### 🔐 Authentication
+- Login using:
+  - `username:password`
+  - `email:password`
+- Uses **Basic Authentication** to obtain a JWT
+- JWT is used with **Bearer Authentication** for GraphQL requests
+- Error handling for invalid credentials
+- Logout functionality
+
+---
+
+### 👤 Profile Page
+Displays user-specific data such as:
+- Basic user information (id, login)
+- Total XP earned
+- Grades and progression
+- Audit ratio
+- Skills (optional)
+
+---
+
+### 📊 Statistics (SVG Graphs)
+At least **two graphs** implemented using SVG:
+- XP progress over time
+- XP by project
+- PASS / FAIL ratio
+- Audit ratio
+- Piscine stats
+- Attempts per exercise
+
+Graphs can be:
+- Interactive
+- Animated
+
+---
+
+## 🧠 GraphQL Usage
+
+The project uses different types of GraphQL queries:
+
+### 1. Basic Query
+```graphql
+{
+  user {
+    id
+    login
+  }
+}
